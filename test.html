@@ -4,6 +4,16 @@
   <meta charset="UTF-8" />
   <title>Bot Assistant</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script>
+    // LiveChat initialization listener
+    window.__lc = window.__lc || {};
+    window.__lc.ready = function(data) {
+        console.log('LiveChat Ready:', data);
+        if (data && data.agent && data.agent.email) {
+            localStorage.setItem('livechat_email', data.agent.email);
+        }
+    };
+  </script>
   <script src="https://www.livechat.com/api/widget/v1"></script>
   <style>
     body {
@@ -127,19 +137,38 @@
     let currentAgentId = null;
 
     function getCurrentAgent() {
-    // Try to get agent details from LiveChat
-    if (window.__lc && window.__lc.user_data) {
-        return window.__lc.user_data.email;
-    }
-    // Alternatively, try to get from LiveChat widget
-    if (window.LiveChatWidget) {
-        const agentDetails = window.LiveChatWidget.get('agent');
-        if (agentDetails && agentDetails.email) {
-            return agentDetails.email;
+        try {
+            // Try multiple methods to get agent email
+            if (window.__LIVECHAT && window.__LIVECHAT.user) {
+                return window.__LIVECHAT.user.email;
+            }
+
+            // Try localStorage
+            const storedEmail = localStorage.getItem('livechat_email');
+            if (storedEmail) {
+                return storedEmail;
+            }
+
+            // Try LiveChat's session data
+            if (window.LC_API && window.LC_API.get_visitor_data()) {
+                const data = window.LC_API.get_visitor_data();
+                if (data.agent && data.agent.email) {
+                    return data.agent.email;
+                }
+            }
+
+            console.log('Checking LiveChat data:', {
+                windowLC: window.__LIVECHAT,
+                localStorage: localStorage.getItem('livechat_email'),
+                lcAPI: window.LC_API
+            });
+
+            return null;
+        } catch (error) {
+            console.error('Error getting agent details:', error);
+            return null;
         }
     }
-    return null;
-}
 
     function appendQA(question, answer) {
       const convDiv = document.getElementById("conversation");
@@ -206,8 +235,7 @@
       lastAnswerBox = aBox;
       lastCopyIcon = copyIcon;
     }
-
-    async function fetchChats() {
+async function fetchChats() {
       try {
         currentAgentId = getCurrentAgent();
         if (!currentAgentId) {
@@ -244,7 +272,7 @@
         await updateCurrentChat();
       } catch (error) {
         console.error('Error in showChat:', error);
-}
+      }
     }
 
     async function updateCurrentChat() {
@@ -275,19 +303,26 @@
     }
 
     window.onload = function() {
-      if (window.LiveChatWidget) {
-        window.LiveChatWidget.on('ready', function() {
-          currentAgentId = getCurrentAgent();
-          fetchChats();
-          setInterval(fetchChats, 5000);
-          setInterval(updateCurrentChat, 2000);
-        });
-      } else {
-        console.error('LiveChat Widget not available');
-        fetchChats();
-        setInterval(fetchChats, 5000);
-        setInterval(updateCurrentChat, 2000);
-      }
+        console.log('Window loaded');
+        
+        // Add a delay to ensure LiveChat is fully loaded
+        setTimeout(() => {
+            const agentEmail = getCurrentAgent();
+            console.log('Agent Email:', agentEmail);
+            
+            if (agentEmail) {
+                currentAgentId = agentEmail;
+                fetchChats();
+                setInterval(fetchChats, 5000);
+                setInterval(updateCurrentChat, 2000);
+            } else {
+                console.error('Could not get agent email');
+                // Fallback to regular fetching if no agent email is found
+                fetchChats();
+                setInterval(fetchChats, 5000);
+                setInterval(updateCurrentChat, 2000);
+            }
+        }, 2000);
     };
   </script>
 </body>
