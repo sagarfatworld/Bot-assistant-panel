@@ -127,11 +127,19 @@
     let currentAgentId = null;
 
     function getCurrentAgent() {
-      if (window.LiveChatWidget) {
-        return window.LiveChatWidget.get('agent_id');
-      }
-      return null;
+    // Try to get agent details from LiveChat
+    if (window.__lc && window.__lc.user_data) {
+        return window.__lc.user_data.email;
     }
+    // Alternatively, try to get from LiveChat widget
+    if (window.LiveChatWidget) {
+        const agentDetails = window.LiveChatWidget.get('agent');
+        if (agentDetails && agentDetails.email) {
+            return agentDetails.email;
+        }
+    }
+    return null;
+}
 
     function appendQA(question, answer) {
       const convDiv = document.getElementById("conversation");
