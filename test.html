@@ -2,314 +2,131 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Bot Assistant</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <script>
-    window.__lc = window.__lc || {};
-    window.__lc.license = 19178379; // Replace with your LiveChat license number
-
-    window.__lc.chat_between_groups = false;
-    window.__lc.group = 0;
-
-    // Capture agent email using LiveChat 'on_after_load' event
-    window.__lc.integration_name = "BotAssistantPanel";
-
-    window.__lc.params = [
-      {
-        name: 'agent_email_capture',
-        value: 'enabled'
-      }
-    ];
-  </script>
-  <script>
-    window.__lc = window.__lc || {};
-    window.__lc.ready = function(data) {
-        console.log('LiveChat Ready:', data);
-
-        if (window.LC_API && typeof window.LC_API.on_after_load === "function") {
-            window.LC_API.on_after_load = function() {
-                try {
-                    window.LC_API.get_agents(function(agents) {
-                        if (agents && agents.length > 0) {
-                            const email = agents[0].email;
-                            if (email) {
-                                console.log('Captured Agent Email:', email);
-                                localStorage.setItem('livechat_email', email);
-                            }
-                        }
-                    });
-                } catch (err) {
-                    console.error('Error retrieving agent email:', err);
-                }
-            };
-        }
-    };
-  </script>
-  <script src="https://cdn.livechatinc.com/tracking.js" async></script>
-
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Bot Answer Panel</title>
   <style>
     body {
-      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-      background-color: #f9f9f9;
-      margin: 0;
-      padding: 20px;
-      color: #333;
-    }
-    .container {
-      background-color: #fff;
-      border-radius: 12px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-      padding: 20px 30px;
-      max-width: 600px;
-      margin: auto;
+      font-family: Arial, sans-serif;
+      margin: 20px;
     }
     h2 {
-      margin-top: 0;
       font-size: 18px;
-      color: #2c3e50;
-      text-align: center;
+      margin-bottom: 10px;
     }
-    .conversation {
-      max-height: 400px;
+    #chatList {
+      max-height: 300px;
       overflow-y: auto;
-      padding-right: 10px;
-      margin-bottom: 20px;
+      border: 1px solid #ccc;
+      padding: 10px;
     }
-    .qa-pair {
-      margin-bottom: 20px;
+    .chat-item {
+      cursor: pointer;
+      padding: 5px;
       border-bottom: 1px solid #eee;
-      padding-bottom: 10px;
     }
-    .label {
-      font-weight: bold;
-      margin-bottom: 5px;
-      color: #555;
+    .chat-item:hover {
+      background-color: #f0f0f0;
     }
-    .box {
-      background-color: #f4f6f8;
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      padding: 12px;
-      font-size: 16px;
-      white-space: pre-wrap;
-      position: relative;
-    }
-    .copy-icon {
-      position: absolute;
-      top: 8px;
-      right: 8px;
-      cursor: pointer;
-      opacity: 0.7;
-      transition: opacity 0.2s;
-    }
-    .copy-icon:hover {
-      opacity: 1;
-    }
-    .copy-feedback {
-      position: absolute;
-      right: 8px;
-      top: 8px;
-      background: #28a745;
-      color: white;
-      padding: 4px 8px;
-      border-radius: 4px;
-      font-size: 12px;
-      display: none;
-    }
-    .footer {
-      text-align: center;
+    #answer {
       margin-top: 20px;
-      font-size: 12px;
-      color: #aaa;
-    }
-    .chat-buttons {
-      margin-bottom: 20px;
-      text-align: center;
-    }
-    .chat-button {
-      margin: 3px;
-      padding: 5px 10px;
-      border: none;
-      border-radius: 4px;
-      background-color: #2c3e50;
-      color: white;
-      cursor: pointer;
-      font-size: 8px;
+      font-style: italic;
+      color: #333;
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h2>🤖 Bot Assistant Panel</h2>
-    <div id="chatButtons" class="chat-buttons"></div>
-    <div id="conversation" class="conversation"></div>
-    <div class="footer">Powered by Bot@Work</div>
+  <h2>Bot Answer Panel</h2>
+
+  <div id="chatList">
+    <!-- Chat IDs will be listed here -->
+  </div>
+  <div id="answer">
+    <!-- Bot answer will appear here -->
   </div>
 
+  <!-- LiveChat Agent App SDK -->
+  <script src="https://cdn.livechatinc.com/agent-app-sdk/release/3.2.0/agent-app-sdk.min.js"></script>
+
   <script>
-    let lastAnswerBox = null;
-    let lastCopyIcon = null;
-    let conversationHistory = [];
-    let currentChatId = null;
-    let lastMessageCount = 0;
-    let currentAgentId = null;
+    const webhookUrl = "https://bot.flatworldsolutions.com/lcapi/webhook";
+    const chatListDiv = document.getElementById("chatList");
+    const answerDiv = document.getElementById("answer");
 
-    function getCurrentAgent() {
+    // Step 1: Get logged-in agent's email and store it
+    LiveChatWidget.on('ready', async () => {
       try {
-        const storedEmail = localStorage.getItem('livechat_email');
-        if (storedEmail) {
-          return storedEmail;
+        const identity = await LiveChatWidget.get('identity');
+        const agentEmail = identity?.email || 'Unknown';
+        localStorage.setItem('livechat_email', agentEmail);
+
+        // Optional: Display it in header
+        const header = document.querySelector('h2');
+        if (header) {
+          header.innerText += ` (${agentEmail})`;
         }
-        return null;
-      } catch (error) {
-        console.error('Error getting agent email:', error);
-        return null;
+
+        console.log("Agent email stored:", agentEmail);
+      } catch (err) {
+        console.error("Failed to get agent email:", err);
+      }
+    });
+
+    // Step 2: Load active chats from localStorage
+    function loadActiveChats() {
+      const activeChats = JSON.parse(localStorage.getItem("livechat_active_chats") || "[]");
+
+      chatListDiv.innerHTML = ""; // Clear current list
+
+      if (activeChats.length === 0) {
+        chatListDiv.innerHTML = "<p>No active chats found.</p>";
+        return;
+      }
+
+      activeChats.forEach((chat) => {
+        const div = document.createElement("div");
+        div.className = "chat-item";
+        div.textContent = chat.id;
+        div.onclick = () => fetchBotAnswer(chat.id);
+        chatListDiv.appendChild(div);
+      });
+    }
+
+    // Step 3: Fetch bot answer for selected chat
+    async function fetchBotAnswer(chatId) {
+      const messages = JSON.parse(localStorage.getItem("livechat_messages") || "{}");
+      const chatMessages = messages[chatId] || [];
+
+      // Get latest message from visitor
+      const visitorMsg = chatMessages.reverse().find(msg => msg.author_type === "visitor");
+
+      if (!visitorMsg) {
+        answerDiv.innerHTML = "<p>No visitor message found in this chat.</p>";
+        return;
+      }
+
+      const question = visitorMsg.text;
+      const agentEmail = localStorage.getItem("livechat_email") || "";
+
+      try {
+        const response = await fetch(webhookUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email: agentEmail,
+            chat_id: chatId,
+            question: question,
+          }),
+        });
+
+        const data = await response.json();
+        answerDiv.innerHTML = `<strong>Bot:</strong> ${data.answer || 'No answer returned.'}`;
+      } catch (err) {
+        console.error("Error fetching bot answer:", err);
+        answerDiv.innerHTML = "<p>Failed to get bot answer.</p>";
       }
     }
 
-    function appendQA(question, answer) {
-      const convDiv = document.getElementById("conversation");
-      const pairDiv = document.createElement("div");
-      pairDiv.className = "qa-pair";
-
-      const qLabel = document.createElement("div");
-      qLabel.className = "label";
-      qLabel.innerText = "Visitor Question:";
-
-      const qBox = document.createElement("div");
-      qBox.className = "box";
-      qBox.innerText = question;
-
-      const aLabel = document.createElement("div");
-      aLabel.className = "label";
-      aLabel.innerText = "Bot's Answer:";
-
-      const aBox = document.createElement("div");
-      aBox.className = "box";
-      aBox.innerText = answer;
-
-      const copyIcon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-      copyIcon.setAttribute("width", "20");
-      copyIcon.setAttribute("height", "20");
-      copyIcon.setAttribute("viewBox", "0 0 24 24");
-      copyIcon.setAttribute("fill", "none");
-      copyIcon.setAttribute("stroke", "currentColor");
-      copyIcon.setAttribute("stroke-width", "2");
-      copyIcon.setAttribute("stroke-linecap", "round");
-      copyIcon.setAttribute("stroke-linejoin", "round");
-      copyIcon.classList.add("copy-icon");
-      copyIcon.innerHTML = `
-        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-      `;
-
-      const copyFeedback = document.createElement("div");
-      copyFeedback.className = "copy-feedback";
-      copyFeedback.textContent = "Copied!";
-
-      copyIcon.onclick = async () => {
-        try {
-          await navigator.clipboard.writeText(aBox.innerText);
-          copyFeedback.style.display = 'block';
-          setTimeout(() => {
-            copyFeedback.style.display = 'none';
-          }, 2000);
-        } catch (err) {
-          console.error('Failed to copy:', err);
-        }
-      };
-
-      aBox.appendChild(copyIcon);
-      aBox.appendChild(copyFeedback);
-
-      pairDiv.appendChild(qLabel);
-      pairDiv.appendChild(qBox);
-      pairDiv.appendChild(aLabel);
-      pairDiv.appendChild(aBox);
-
-      convDiv.appendChild(pairDiv);
-      lastAnswerBox = aBox;
-      lastCopyIcon = copyIcon;
-    }
-
-    async function fetchChats() {
-      try {
-        currentAgentId = getCurrentAgent();
-        if (!currentAgentId) {
-          console.error('No agent ID found');
-          return;
-        }
-
-        const response = await fetch(`https://testing-app-rb2j.onrender.com/livechat/chats/${currentAgentId}`);
-        const chats = await response.json();
-
-        const buttonContainer = document.getElementById('chatButtons');
-        buttonContainer.innerHTML = '';
-
-        if (chats.length > 1) {
-          chats.forEach(chat => {
-            const button = document.createElement('button');
-            button.className = 'chat-button';
-            button.textContent = chat.chatId;
-            button.onclick = () => showChat(chat.chatId);
-            buttonContainer.appendChild(button);
-          });
-        } else if (chats.length === 1) {
-          showChat(chats[0].chatId);
-        }
-      } catch (error) {
-        console.error('Error fetching chats:', error);
-      }
-    }
-
-    async function showChat(chatId) {
-      try {
-        currentChatId = chatId;
-        lastMessageCount = 0;
-        await updateCurrentChat();
-      } catch (error) {
-        console.error('Error in showChat:', error);
-      }
-    }
-
-    async function updateCurrentChat() {
-      if (!currentChatId) return;
-
-      try {
-        const response = await fetch(`https://testing-app-rb2j.onrender.com/livechat/chat/${currentChatId}`);
-        const messages = await response.json();
-
-        const conversationDiv = document.getElementById('conversation');
-        if (messages.length > lastMessageCount) {
-          const isAtBottom = conversationDiv.scrollHeight - conversationDiv.scrollTop === conversationDiv.clientHeight;
-          conversationDiv.innerHTML = '';
-          messages.forEach(message => {
-            appendQA(message.visitorMessage, message.botResponse);
-          });
-
-          if (isAtBottom || lastMessageCount === 0) {
-            conversationDiv.scrollTop = conversationDiv.scrollHeight;
-          }
-
-          lastMessageCount = messages.length;
-        }
-      } catch (error) {
-        console.error('Error updating current chat:', error);
-      }
-    }
-
-    window.onload = function() {
-      console.log('Window loaded');
-
-      setTimeout(() => {
-        const agentEmail = getCurrentAgent();
-        console.log('Agent Email:', agentEmail);
-
-        fetchChats();
-        setInterval(fetchChats, 5000);
-        setInterval(updateCurrentChat, 2000);
-      }, 3000);
-    };
+    loadActiveChats();
   </script>
 </body>
 </html>
