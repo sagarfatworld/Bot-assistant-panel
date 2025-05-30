@@ -170,6 +170,7 @@
         <div class="footer">Powered by Bot@Work</div>
     </div>
 
+    <script src="https://accounts.livechat.com/sdk/v2/agent-app-sdk.js"></script>
     <script>
         let currentChatId = null;
         let lastMessageCount = 0;
@@ -177,27 +178,46 @@
 
         async function initialize() {
             try {
-                // Get the chat ID from the URL if available
-                const urlParams = new URLSearchParams(window.location.search);
-                currentChatId = urlParams.get('chatId');
+                // Wait for LiveChat SDK to load
+                await new Promise((resolve) => {
+                    if (window.LivechatAgentApp) {
+                        resolve();
+                    } else {
+                        window.addEventListener('AgentAppReady', resolve);
+                    }
+                });
 
-                if (!currentChatId) {
-                    showError('No chat ID available');
-                    return;
+                // Get the chat details from LiveChat
+                const agentApp = window.LivechatAgentApp;
+                const data = await agentApp.getChatDetails();
+                
+                console.log('Chat Details:', data);
+                
+                if (data && data.chat && data.chat.id) {
+                    currentChatId = data.chat.id;
+                    document.getElementById('agentInfo').textContent = `Chat ID: ${currentChatId}`;
+                    
+                    // Start updating chat
+                    await updateCurrentChat();
+                    startPolling();
+                } else {
+                    showError('No chat context available');
                 }
-
-                document.getElementById('agentInfo').textContent = `Chat ID: ${currentChatId}`;
-                console.log('Chat ID:', currentChatId);
-
-                // Start updating chat
-                await updateCurrentChat();
-                startPolling();
 
             } catch (error) {
                 showError('Failed to initialize', error.message);
                 console.error('Error initializing:', error);
             }
         }
+
+        // Listen for chat changes
+        window.LivechatAgentApp.on('chat_details', (data) => {
+            console.log('Chat details updated:', data);
+            if (data && data.chat && data.chat.id) {
+                currentChatId = data.chat.id;
+                updateCurrentChat();
+            }
+        });
 
         function showError(message, details = '') {
             const errorDiv = document.getElementById('errorState');
@@ -296,7 +316,6 @@
                     }, 2000);
                 } catch (err) {
                     console.error('Failed to copy:', err);
-                    showError('Failed to copy text', err.message);
                 }
             };
 
@@ -320,24 +339,12 @@
             }, 2000);
         }
 
-        // Debug function
-        function updateDebugInfo() {
-            const debugDiv = document.getElementById('debugInfo');
-            debugDiv.textContent = `Chat ID: ${currentChatId || 'None'} | Messages: ${lastMessageCount}`;
-        }
-
-        // Initialize when the page loads
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', initialize);
-        } else {
+        // Initialize when the SDK is ready
+        if (window.LivechatAgentApp) {
             initialize();
+        } else {
+            window.addEventListener('AgentAppReady', initialize);
         }
-
-        // Error handling for fetch failures
-        window.addEventListener('error', function(e) {
-            console.error('Global error:', e);
-            showError('Application Error', e.message);
-        });
     </script>
 </body>
 </html>
