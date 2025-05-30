@@ -177,28 +177,21 @@
 
         async function initialize() {
             try {
-                // Initialize Agent App SDK
-                const AgentApp = window.LivechatAgentApp.default;
-                const agentApp = await AgentApp.init();
-                
-                // Get current chat data
-                const context = await agentApp.getContext();
-                console.log('Context:', context);
-                
-                if (context.chat) {
-                    currentChatId = context.chat.id;
-                    agentEmail = context.agent.email;
-                    
-                    document.getElementById('agentInfo').textContent = `Agent: ${agentEmail}`;
-                    console.log('Chat ID:', currentChatId);
-                    console.log('Agent Email:', agentEmail);
-                    
-                    // Start fetching chat messages
-                    await updateCurrentChat();
-                    startPolling();
-                } else {
-                    showError('No chat context available');
+                // Get the chat ID from the URL if available
+                const urlParams = new URLSearchParams(window.location.search);
+                currentChatId = urlParams.get('chatId');
+
+                if (!currentChatId) {
+                    showError('No chat ID available');
+                    return;
                 }
+
+                document.getElementById('agentInfo').textContent = `Chat ID: ${currentChatId}`;
+                console.log('Chat ID:', currentChatId);
+
+                // Start updating chat
+                await updateCurrentChat();
+                startPolling();
 
             } catch (error) {
                 showError('Failed to initialize', error.message);
@@ -223,6 +216,7 @@
             if (!currentChatId) return;
 
             try {
+                showLoading(true);
                 const response = await fetch(`https://testing-app-rb2j.onrender.com/livechat/chat/${currentChatId}`);
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
@@ -246,6 +240,9 @@
                 }
             } catch (error) {
                 console.error('Error updating chat:', error);
+                showError('Error updating chat', error.message);
+            } finally {
+                showLoading(false);
             }
         }
 
@@ -275,19 +272,35 @@
             // Add copy button
             const copyButton = document.createElement("button");
             copyButton.className = "copy-button";
+            copyButton.style.cssText = `
+                position: absolute;
+                top: 5px;
+                right: 5px;
+                padding: 4px 8px;
+                background: #2c3e50;
+                color: white;
+                border: none;
+                border-radius: 4px;
+                cursor: pointer;
+                font-size: 12px;
+            `;
             copyButton.innerHTML = "Copy";
             copyButton.onclick = async () => {
                 try {
                     await navigator.clipboard.writeText(answer);
                     copyButton.innerHTML = "Copied!";
+                    copyButton.style.background = "#27ae60";
                     setTimeout(() => {
                         copyButton.innerHTML = "Copy";
+                        copyButton.style.background = "#2c3e50";
                     }, 2000);
                 } catch (err) {
                     console.error('Failed to copy:', err);
+                    showError('Failed to copy text', err.message);
                 }
             };
 
+            aBox.style.position = 'relative';
             aBox.appendChild(copyButton);
 
             pairDiv.appendChild(qLabel);
@@ -307,8 +320,24 @@
             }, 2000);
         }
 
+        // Debug function
+        function updateDebugInfo() {
+            const debugDiv = document.getElementById('debugInfo');
+            debugDiv.textContent = `Chat ID: ${currentChatId || 'None'} | Messages: ${lastMessageCount}`;
+        }
+
         // Initialize when the page loads
-        window.addEventListener('DOMContentLoaded', initialize);
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initialize);
+        } else {
+            initialize();
+        }
+
+        // Error handling for fetch failures
+        window.addEventListener('error', function(e) {
+            console.error('Global error:', e);
+            showError('Application Error', e.message);
+        });
     </script>
 </body>
 </html>
