@@ -175,33 +175,34 @@
         let lastMessageCount = 0;
         let agentEmail = null;
 
-        // Initialize LiveChat Widget SDK
-        async function initializeWidget() {
+        async function initialize() {
             try {
-                // Initialize the Widget SDK
-                const LiveChatWidget = window.LiveChatWidget;
+                // Initialize Agent App SDK
+                const AgentApp = window.LivechatAgentApp.default;
+                const agentApp = await AgentApp.init();
                 
-                if (!LiveChatWidget) {
-                    throw new Error('Widget SDK not loaded');
-                }
-
                 // Get current chat data
-                const data = await LiveChatWidget.get('chat');
-                currentChatId = data.chatId;
+                const context = await agentApp.getContext();
+                console.log('Context:', context);
                 
-                // Get agent data
-                const agent = await LiveChatWidget.get('agent');
-                agentEmail = agent.email;
-
-                document.getElementById('agentInfo').textContent = `Agent: ${agentEmail}`;
-                
-                // Start fetching chat messages
-                await updateCurrentChat();
-                startPolling();
+                if (context.chat) {
+                    currentChatId = context.chat.id;
+                    agentEmail = context.agent.email;
+                    
+                    document.getElementById('agentInfo').textContent = `Agent: ${agentEmail}`;
+                    console.log('Chat ID:', currentChatId);
+                    console.log('Agent Email:', agentEmail);
+                    
+                    // Start fetching chat messages
+                    await updateCurrentChat();
+                    startPolling();
+                } else {
+                    showError('No chat context available');
+                }
 
             } catch (error) {
                 showError('Failed to initialize', error.message);
-                console.error('Error initializing Widget:', error);
+                console.error('Error initializing:', error);
             }
         }
 
@@ -307,7 +308,8 @@
         }
 
         // Initialize when the page loads
-        window.addEventListener('DOMContentLoaded', initializeWidget);
+        window.addEventListener('DOMContentLoaded', initialize);
     </script>
 </body>
+</html>
 </html>
