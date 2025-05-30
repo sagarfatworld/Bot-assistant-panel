@@ -24,7 +24,7 @@
 
     h2 {
       margin-top: 0;
-      font-size: 22px;
+      font-size: 18px;
       color: #2c3e50;
       text-align: center;
     }
@@ -96,14 +96,15 @@
     }
 
     .chat-button {
-      margin: 5px;
-      padding: 10px 20px;
-      border: none;
-      border-radius: 5px;
-      background-color: #2c3e50;
-      color: white;
-      cursor: pointer;
-    }
+    margin: 3px;
+    padding: 5px 10px;
+    border: none;
+    border-radius: 4px;
+    background-color: #2c3e50;
+    color: white;
+    cursor: pointer;
+    font-size: 10px;  /* Reduced font size */
+}
   </style>
 </head>
 <body>
@@ -201,7 +202,7 @@
           chats.forEach(chat => {
             const button = document.createElement('button');
             button.className = 'chat-button';
-            button.textContent = `Chat ${chat.chatId}`;
+            button.textContent = chat.chatId;
             button.onclick = () => showChat(chat.chatId);
             buttonContainer.appendChild(button);
           });
