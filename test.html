@@ -35,7 +35,7 @@
   </style>
 </head>
 <body>
-  <h2>Bot Answer Panel</h2>
+  <h2 id="panelTitle">Bot Answer Panel</h2>
 
   <div id="chatList">
     <!-- Chat IDs will be listed here -->
@@ -53,14 +53,14 @@
     const answerDiv = document.getElementById("answer");
 
     // Step 1: Get logged-in agent's email and store it
-    LiveChatWidget.on('ready', async () => {
+    LiveChat.on('ready', async () => {
       try {
-        const identity = await LiveChatWidget.get('identity');
-        const agentEmail = identity?.email || 'Unknown';
+        const profile = await LiveChat.agents.getMyProfile();
+        const agentEmail = profile?.email || 'Unknown';
         localStorage.setItem('livechat_email', agentEmail);
 
-        // Optional: Display it in header
-        const header = document.querySelector('h2');
+        // ✅ Show email in the header
+        const header = document.getElementById('panelTitle');
         if (header) {
           header.innerText += ` (${agentEmail})`;
         }
