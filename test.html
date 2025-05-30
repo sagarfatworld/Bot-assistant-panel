@@ -201,7 +201,7 @@
           chats.forEach(chat => {
             const button = document.createElement('button');
             button.className = 'chat-button';
-            button.textContent = `Chat ${chat.chatId}`;
+            button.textContent = chat.chatId;
             button.onclick = () => showChat(chat.chatId);
             buttonContainer.appendChild(button);
           });
