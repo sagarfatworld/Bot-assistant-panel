@@ -139,17 +139,36 @@
 
     // Added LiveChat initialization function
     async function initializeLiveChat() {
-      try {
+    try {
+        console.log('Starting LiveChat initialization...');
+        
+        if (typeof LiveChat === 'undefined') {
+            console.error('LiveChat SDK not loaded');
+            document.getElementById('userInfo').textContent = 'Error: LiveChat SDK not loaded';
+            return;
+        }
+
+        console.log('Initializing LiveChat...');
         await LiveChat.init();
+        console.log('LiveChat initialized, getting user...');
+        
         const user = await LiveChat.getUser();
-        userEmail = user.email;
-        document.getElementById('userInfo').textContent = `Logged in as: ${userEmail}`;
-        console.log('LiveChat initialized, user:', userEmail);
-      } catch (error) {
+        console.log('User data received:', user);
+        
+        if (user && user.email) {
+            userEmail = user.email;
+            document.getElementById('userInfo').textContent = `Logged in as: ${userEmail}`;
+            console.log('Successfully set user email:', userEmail);
+        } else {
+            document.getElementById('userInfo').textContent = 'Error: No user email found';
+            console.error('No user email in response:', user);
+        }
+    } catch (error) {
         console.error('LiveChat initialization error:', error);
-        document.getElementById('userInfo').textContent = 'Not connected to LiveChat';
-      }
+        document.getElementById('userInfo').textContent = 
+            `LiveChat Error: ${error.message || 'Unknown error'}`;
     }
+}
 
     function appendQA(question, answer) {
       const convDiv = document.getElementById("conversation");
