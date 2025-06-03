@@ -140,15 +140,19 @@
     // Added LiveChat initialization function
     async function initializeLiveChat() {
     try {
-        console.log('Starting LiveChat initialization...');
-        
-        if (typeof LiveChat === 'undefined') {
-            console.error('LiveChat SDK not loaded');
-            document.getElementById('userInfo').textContent = 'Error: LiveChat SDK not loaded';
-            return;
+        // Wait for SDK to load
+        let attempts = 0;
+        while (typeof LiveChat === 'undefined' && attempts < 10) {
+            await new Promise(resolve => setTimeout(resolve, 500));
+            attempts++;
+            console.log('Waiting for LiveChat SDK to load... Attempt:', attempts);
         }
 
-        console.log('Initializing LiveChat...');
+        if (typeof LiveChat === 'undefined') {
+            throw new Error('LiveChat SDK failed to load after multiple attempts');
+        }
+
+        console.log('LiveChat SDK loaded, initializing...');
         await LiveChat.init();
         console.log('LiveChat initialized, getting user...');
         
@@ -160,8 +164,7 @@
             document.getElementById('userInfo').textContent = `Logged in as: ${userEmail}`;
             console.log('Successfully set user email:', userEmail);
         } else {
-            document.getElementById('userInfo').textContent = 'Error: No user email found';
-            console.error('No user email in response:', user);
+            throw new Error('No user email found in response');
         }
     } catch (error) {
         console.error('LiveChat initialization error:', error);
@@ -299,15 +302,17 @@ button.onclick = () => showChat(chat.chatId);
 
     // Modified window.onload to initialize LiveChat first
     window.onload = async function() {
-      try {
-        await initializeLiveChat(); // Initialize LiveChat first
+    console.log('Page loaded, starting initialization...');
+    try {
+        await initializeLiveChat();
+        console.log('LiveChat initialization completed');
         fetchChats();
         setInterval(fetchChats, 5000);
         setInterval(updateCurrentChat, 2000);
-      } catch (error) {
+    } catch (error) {
         console.error('Error during initialization:', error);
-      }
-    };
+    }
+};
   </script>
 </body>
 </html>
