@@ -27,30 +27,42 @@
             try {
                 console.log('Creating LiveChat widget...');
                 
-                // Create the widget
-                const widget = await LiveChat.init();
-                console.log('Widget created:', widget);
+                return new Promise((resolve, reject) => {
+                    LiveChat.createDetailsWidget()
+                        .then(function(widget) {
+                            console.log('Widget created successfully');
+                            
+                            // Get current agent information
+                            widget.getCurrentAgent()
+                                .then(agent => {
+                                    console.log('Agent data received:', agent);
+                                    
+                                    // Store agent information
+                                    agentId = agent.id;
+                                    userEmail = agent.email;
 
-                // Get current agent data
-                const currentAgent = await widget.getUser();
-                console.log('Agent data received:', currentAgent);
+                                    // Display agent info
+                                    document.getElementById('agent-info').innerHTML = 
+                                        `Logged in as: ${agent.name || agent.email} (${agent.id})`;
 
-                if (!currentAgent) {
-                    throw new Error('No agent information received');
-                }
-
-                // Store agent information
-                agentId = currentAgent.id;
-                userEmail = currentAgent.email;
-
-                // Display agent info
-                document.getElementById('agent-info').innerHTML = 
-                    `Logged in as: ${currentAgent.name || currentAgent.email} (${currentAgent.id})`;
-
-                // Login to backend
-                await loginToBackend(currentAgent);
-
-                return true;
+                                    // Login to backend
+                                    loginToBackend(agent)
+                                        .then(() => resolve(true))
+                                        .catch(error => {
+                                            console.error('Backend login failed:', error);
+                                            reject(error);
+                                        });
+                                })
+                                .catch(error => {
+                                    console.error('Failed to get agent info:', error);
+                                    reject(error);
+                                });
+                        })
+                        .catch(error => {
+                            console.error('Failed to create widget:', error);
+                            reject(error);
+                        });
+                });
             } catch (error) {
                 console.error('SDK initialization error:', error);
                 document.getElementById('agent-info').innerText = 
@@ -84,28 +96,30 @@
 
         // Your existing fetchChats, showChat, updateCurrentChat functions remain the same
 
-        window.onload = async function() {
-            try {
-                console.log('Page loaded, checking LiveChat environment...');
-                
-                if (typeof LiveChat === 'undefined') {
-                    throw new Error('LiveChat SDK not loaded');
-                }
-
-                console.log('LiveChat SDK found, initializing...');
-                const initialized = await initializeSDK();
-                
-                if (initialized) {
-                    console.log('SDK initialized successfully, starting chat fetch...');
-                    fetchChats();
-                    setInterval(fetchChats, 5000);
-                    setInterval(updateCurrentChat, 2000);
-                }
-            } catch (error) {
-                console.error('Error during initialization:', error);
+        window.onload = function() {
+            console.log('Page loaded, checking LiveChat environment...');
+            
+            if (typeof LiveChat === 'undefined') {
                 document.getElementById('agent-info').innerText = 
-                    'Initialization error: ' + error.message;
+                    'Error: LiveChat SDK not loaded';
+                return;
             }
+
+            console.log('LiveChat SDK found, initializing...');
+            initializeSDK()
+                .then(initialized => {
+                    if (initialized) {
+                        console.log('SDK initialized successfully, starting chat fetch...');
+                        fetchChats();
+                        setInterval(fetchChats, 5000);
+                        setInterval(updateCurrentChat, 2000);
+                    }
+                })
+                .catch(error => {
+                    console.error('Initialization error:', error);
+                    document.getElementById('agent-info').innerText = 
+                        'Initialization error: ' + error.message;
+                });
         };
     </script>
 </body>
