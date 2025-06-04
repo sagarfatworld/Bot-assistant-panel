@@ -43,20 +43,26 @@
         <h2>Logged-in Agent Info</h2>
         <div id="agent-info" class="agent-info">Loading agent information...</div>
     </div>
-    <script>
-        // Initialize the Agent App Widget SDK
-        const { AgentAppSDK } = window.LiveChat;
-        const sdk = new AgentAppSDK();
 
-        // Get the logged-in agent's data
-        sdk.getAgent().then(agent => {
-            document.getElementById('agent-info').innerHTML = `
-                <strong>Name:</strong> ${agent.name}<br>
-                <strong>Email:</strong> ${agent.email}
-            `;
-        }).catch(error => {
-            document.getElementById('agent-info').innerText = 'Could not get agent info.';
-            console.error(error);
+    <!-- Additional block you wanted to include (corrected) -->
+    <div id="agent-info">Loading agent information...</div>
+    <script src="https://cdn.jsdelivr.net/npm/@livechat/agent-app-widget-sdk@1.3.0"></script>
+    <script>
+        window.addEventListener('DOMContentLoaded', function() {
+            if (window.LiveChat && window.LiveChat.AgentAppSDK) {
+                const sdk = new window.LiveChat.AgentAppSDK();
+                sdk.getAgent().then(agent => {
+                    document.getElementById('agent-info').innerHTML = `
+                        <strong>Name:</strong> ${agent.name}<br>
+                        <strong>Email:</strong> ${agent.email}
+                    `;
+                }).catch(error => {
+                    document.getElementById('agent-info').innerText = 'Could not get agent info.';
+                    console.error(error);
+                });
+            } else {
+                document.getElementById('agent-info').innerText = 'SDK not loaded or not in Agent App.';
+            }
         });
     </script>
 </body>
