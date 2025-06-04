@@ -31,17 +31,16 @@
                     LiveChat.createDetailsWidget()
                         .then(function(widget) {
                             console.log('Widget created successfully');
-                            
-                            // Get current agent information
-                            widget.getCurrentAgent()
-                                .then(agent => {
-                                    console.log('Agent data received:', agent);
-                                    
-                                    // Store agent information
+
+                            // Listen for ticket info events
+                            widget.on('ticket_info', ticketInfo => {
+                                console.log('Ticket info received:', ticketInfo);
+                                
+                                if (ticketInfo && ticketInfo.assignedAgent) {
+                                    const agent = ticketInfo.assignedAgent;
                                     agentId = agent.id;
                                     userEmail = agent.email;
 
-                                    // Display agent info
                                     document.getElementById('agent-info').innerHTML = 
                                         `Logged in as: ${agent.name || agent.email} (${agent.id})`;
 
@@ -52,11 +51,15 @@
                                             console.error('Backend login failed:', error);
                                             reject(error);
                                         });
-                                })
-                                .catch(error => {
-                                    console.error('Failed to get agent info:', error);
-                                    reject(error);
-                                });
+                                }
+                            });
+
+                            // Listen for page data events as backup
+                            widget.on('page_data', pageData => {
+                                console.log('Page data received:', pageData);
+                                // Handle page data if needed
+                            });
+
                         })
                         .catch(error => {
                             console.error('Failed to create widget:', error);
