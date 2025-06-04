@@ -141,21 +141,39 @@
     let agentId = '';
 
     async function initializeLiveChat() {
-      try {
-        console.log('Initializing LiveChat...');
+    try {
+        // Check if we're in LiveChat context
+        if (window.LiveChat) {
+            console.log('LiveChat SDK found, initializing...');
+        } else {
+            console.error('LiveChat SDK not found in window object');
+            document.getElementById('userInfo').textContent = 
+                'Error: Must be accessed through LiveChat';
+            return null;
+        }
+
         await LiveChat.init();
+        console.log('LiveChat initialized');
+
         const user = await LiveChat.getUser();
-        userEmail = user.email;
-        agentId = user.id;
-        document.getElementById('userInfo').textContent = `Logged in as: ${userEmail}`;
-        console.log('Successfully got user email:', userEmail);
-        return agentId;
-      } catch (error) {
+        console.log('User data received:', user);
+
+        if (user && user.email) {
+            userEmail = user.email;
+            agentId = user.id;
+            document.getElementById('userInfo').textContent = `Logged in as: ${userEmail}`;
+            console.log('User email:', userEmail, 'Agent ID:', agentId);
+            return agentId;
+        } else {
+            throw new Error('No user data available');
+        }
+    } catch (error) {
         console.error('LiveChat initialization error:', error);
-        document.getElementById('userInfo').textContent = 'Not connected to LiveChat';
+        document.getElementById('userInfo').textContent = 
+            `Error: ${error.message}. Please access through LiveChat.`;
         return null;
-      }
     }
+}
 
     function appendQA(question, answer) {
       const convDiv = document.getElementById("conversation");
@@ -286,17 +304,25 @@
     }
 
     window.onload = async function() {
-      try {
-        console.log('Page loaded, initializing LiveChat...');
-        await initializeLiveChat();
-        console.log('LiveChat initialized, starting chat fetching...');
-        fetchChats();
-        setInterval(fetchChats, 5000);
-        setInterval(updateCurrentChat, 2000);
-      } catch (error) {
-        console.error('Error during initialization:', error);
-      }
-    };
+    try {
+        console.log('Page loaded, checking LiveChat SDK...');
+        if (window.location.hostname.includes('livechat')) {
+            console.log('Running in LiveChat context');
+            await initializeLiveChat();
+            fetchChats();
+            setInterval(fetchChats, 5000);
+            setInterval(updateCurrentChat, 2000);
+        } else {
+            console.error('Not running in LiveChat context');
+            document.getElementById('userInfo').textContent = 
+                'Error: Must be accessed through LiveChat Agent App';
+        }
+    } catch (error) {
+        console.error('Initialization error:', error);
+        document.getElementById('userInfo').textContent = 
+            'Error during initialization. Please refresh.';
+    }
+};
   </script>
 </body>
 </html>
