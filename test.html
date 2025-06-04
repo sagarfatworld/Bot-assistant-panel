@@ -130,98 +130,78 @@
 
     <script>
         function waitForLiveChat() {
-            return new Promise((resolve, reject) => {
-                let attempts = 0;
-                const maxAttempts = 20; // Increased attempts
-                
-                const checkLiveChat = () => {
-                    attempts++;
-                    console.log('Checking for LiveChat SDK...', attempts);
-                    
-                    // Check for SDK in different possible locations
-                    const sdk = window.LiveChat || 
-                              window.AgentApp || 
-                              window.AgentAppWidget ||
-                              (window.parent && window.parent.LiveChat);
-                    
-                    if (sdk) {
-                        console.log('LiveChat SDK found!', sdk);
-                        resolve(sdk);
-                    } else if (attempts >= maxAttempts) {
-                        reject(new Error('LiveChat SDK failed to load'));
-                    } else {
-                        setTimeout(checkLiveChat, 1000); // Increased timeout
-                    }
-                };
-                
-                // Start checking after a short delay
+    return new Promise((resolve, reject) => {
+        let attempts = 0;
+        const maxAttempts = 10;
+        
+        const checkLiveChat = () => {
+            attempts++;
+            console.log('Checking for LiveChat SDK...', attempts);
+            
+            // Check both window and parent window for LiveChat
+            const liveChatSDK = window.LiveChat || window.parent.LiveChat;
+            
+            if (liveChatSDK) {
+                console.log('LiveChat SDK found!');
+                resolve(liveChatSDK);
+            } else if (attempts >= maxAttempts) {
+                reject(new Error('LiveChat SDK failed to load'));
+            } else {
                 setTimeout(checkLiveChat, 500);
-            });
-        }
+            }
+        };
+        
+        checkLiveChat();
+    });
+}
         let agentId = '';
         let userEmail = '';
         let currentChatId = null;
         let lastMessageCount = 0;
 
-       async function initializeLiveChat() {
-            try {
-                console.log('Starting LiveChat initialization...');
-                
-                // Try to get SDK
-                const sdk = await waitForLiveChat();
-                console.log('SDK loaded, initializing...');
-                
-                // Initialize SDK
-                await sdk.init();
-                console.log('SDK initialized, getting user...');
-                
-                // Get user info
-                const user = await sdk.getUser();
-                console.log('User info received:', user);
-                
-                if (user && user.id) {
-                    // Store agent info
-                    agentId = user.id;
-                    userEmail = user.email;
-                    
-                    // Update UI
-                    document.getElementById('userInfo').textContent = 
-                        `Logged in as: ${userEmail} (${agentId})`;
-                    
-                    // Login to backend
-                    try {
-                        const loginResponse = await fetch('https://testing-app-rb2j.onrender.com/login', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'Accept': 'application/json'
-                            },
-                            credentials: 'include',
-                            body: JSON.stringify({
-                                agentUserId: agentId,
-                                agentEmail: userEmail
-                            })
-                        });
+      async function initializeLiveChat() {
+    try {
+        console.log('Waiting for LiveChat SDK...');
+        const LiveChatSDK = await waitForLiveChat();
+        
+        console.log('Initializing LiveChat...');
+        await LiveChatSDK.init();
+        
+        console.log('Getting user info...');
+        const user = await LiveChatSDK.getUser();
+        
+        if (user && user.id) {
+            const loginResponse = await fetch('https://testing-app-rb2j.onrender.com/login', {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                credentials: 'include',
+                body: JSON.stringify({
+                    agentUserId: user.id,
+                    agentEmail: user.email
+                })
+            });
 
-                        if (!loginResponse.ok) {
-                            throw new Error('Backend login failed');
-                        }
-
-                        console.log('Backend login successful');
-                        return agentId;
-                    } catch (error) {
-                        throw new Error(`Backend login error: ${error.message}`);
-                    }
-                } else {
-                    throw new Error('No user data received');
-                }
-            } catch (error) {
-                console.error('LiveChat initialization error:', error);
-                document.getElementById('userInfo').textContent = 
-                    `Error: ${error.message}. Please refresh or contact support.`;
-                return null;
+            if (!loginResponse.ok) {
+                throw new Error('Failed to login to backend');
             }
+
+            agentId = user.id;
+            userEmail = user.email;
+            document.getElementById('userInfo').textContent = `Logged in as: ${userEmail}`;
+            console.log('Successfully initialized with agent:', agentId);
+            return agentId;
+        } else {
+            throw new Error('No user data received from LiveChat');
         }
+    } catch (error) {
+        console.error('LiveChat initialization error:', error);
+        document.getElementById('userInfo').textContent = 'Error: ' + error.message;
+        return null;
+    }
+}
         async function fetchChats() {
             try {
                 if (!agentId) {
@@ -367,24 +347,27 @@
         }
 
       window.onload = async function() {
-            try {
-                console.log('Page loaded, starting initialization...');
-                const initialized = await initializeLiveChat();
-                
-                if (initialized) {
-                    console.log('Initialization successful, starting chat fetch...');
-                    fetchChats();
-                    setInterval(fetchChats, 5000);
-                    setInterval(updateCurrentChat, 2000);
-                } else {
-                    console.error('Initialization failed');
-                }
-            } catch (error) {
-                console.error('Error during startup:', error);
+        try {
+            console.log('Page loaded, checking LiveChat environment...');
+            
+            // Modified LiveChat context check
+            if (window.LiveChat || window.parent.LiveChat) {
+                console.log('LiveChat SDK detected');
+                await initializeLiveChat();
+                fetchChats();
+                setInterval(fetchChats, 5000);
+                setInterval(updateCurrentChat, 2000);
+            } else {
+                console.warn('LiveChat SDK not found');
                 document.getElementById('userInfo').textContent = 
-                    'Error during startup: ' + error.message;
+                    'Please access through LiveChat Agent Application';
             }
-        };
+        } catch (error) {
+            console.error('Error during initialization:', error);
+            document.getElementById('userInfo').textContent = 
+                'Error during initialization: ' + error.message;
+        }
+    };
     </script>
 </body>
 </html>
