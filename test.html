@@ -1,17 +1,19 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>LiveChat Account Info</title>
+  <title>LiveChat Agent Info</title>
 </head>
 <body>
-  <button id="getAgents">Get Account Info</button>
+  <button id="getAgents">Get Agent Info</button>
   <pre id="output"></pre>
 
   <script>
     document.getElementById('getAgents').addEventListener('click', () => {
       fetch('https://api.livechatinc.com/v3.4/agents', {
+        method: 'GET',
         headers: {
-          'Authorization': 'Bearer us-south1:jn1uhQufm8zhoCl0-AXSzeciKLk'  // Replace with your token here (dangerous!)
+          'Authorization': 'Bearer dal:us-south1:jn1uhQufm8zhoCl0-AXSzeciKLk', // Replace with actual access token
+          'X-API-Version': '3.4'
         }
       })
       .then(res => {
