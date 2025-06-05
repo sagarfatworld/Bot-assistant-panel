@@ -2,74 +2,45 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>LiveChat Agent Info</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta http-equiv="Content-Security-Policy" content="frame-ancestors 'self' https://my.livechat.com">
+  <title>Agent Info</title>
   <script src="https://unpkg.com/@livechat/agent-app-sdk@1.6.3/dist/agentapp.umd.min.js"></script>
   <style>
     body {
-      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-      background-color: #f9f9f9;
-      margin: 0;
+      font-family: Arial, sans-serif;
+      background-color: #f2f2f2;
       padding: 20px;
-      color: #333;
     }
-
     .container {
-      background-color: #fff;
-      border-radius: 12px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      background: white;
+      border-radius: 10px;
       padding: 20px;
-      max-width: 500px;
+      max-width: 400px;
       margin: 50px auto;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
     }
-
     h3 {
       margin-top: 0;
-      font-size: 20px;
-      color: #2c3e50;
-    }
-
-    p {
-      font-size: 14px;
-      margin: 6px 0;
-    }
-
-    .label {
-      font-weight: bold;
     }
   </style>
 </head>
 <body>
-  <div id="fallback-message" style="text-align: center;">Loading agent info...</div>
+  <div class="container" id="agent-info">Loading agent information...</div>
 
   <script>
-    LiveChat.createDetailsWidget().then(async function (widget) {
+    LiveChat.init().then(async (sdk) => {
       try {
-        const agentInfo = await LiveChat.getAgent();
-
-        console.log("Logged-in Agent:", agentInfo);
-
-        // Remove fallback message
-        const fallback = document.getElementById('fallback-message');
-        if (fallback) fallback.remove();
-
-        // Mount content in widget
-        widget.mount(() => {
-          const container = document.createElement('div');
-          container.className = 'container';
-          container.innerHTML = `
-            <h3>👤 Agent Info</h3>
-            <p><span class="label">Name:</span> ${agentInfo.name}</p>
-            <p><span class="label">Email:</span> ${agentInfo.email}</p>
-            <p><span class="label">ID:</span> ${agentInfo.id}</p>
-          `;
-          return container;
-        });
-      } catch (error) {
-        console.error('Error fetching agent info:', error);
-        const fallback = document.getElementById('fallback-message');
-        if (fallback) fallback.innerText = 'Failed to load agent info.';
+        const user = await sdk.getUser();
+        const container = document.getElementById('agent-info');
+        container.innerHTML = `
+          <h3>Agent Information</h3>
+          <p><strong>Name:</strong> ${user.name}</p>
+          <p><strong>Email:</strong> ${user.email}</p>
+          <p><strong>ID:</strong> ${user.id}</p>
+        `;
+        console.log("Agent info:", user);
+      } catch (err) {
+        console.error("Error getting user info:", err);
+        document.getElementById('agent-info').innerText = 'Failed to load agent information.';
       }
     });
   </script>
