@@ -4,11 +4,11 @@
   <title>LiveChat Account Info</title>
 </head>
 <body>
-  <button id="getInfo">Get Account Info</button>
+  <button id="getAgents">Get Account Info</button>
   <pre id="output"></pre>
 
   <script>
-    document.getElementById('getInfo').addEventListener('click', () => {
+    document.getElementById('getAgents').addEventListener('click', () => {
       fetch('https://api.livechatinc.com/v3.4/agents', {
         headers: {
           'Authorization': 'Bearer us-south1:jn1uhQufm8zhoCl0-AXSzeciKLk'  // Replace with your token here (dangerous!)
