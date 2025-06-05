@@ -1,47 +1,29 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <title>Agent Info</title>
-  <script src="https://unpkg.com/@livechat/agent-app-sdk@1.6.3/dist/agentapp.umd.min.js"></script>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background-color: #f2f2f2;
-      padding: 20px;
-    }
-    .container {
-      background: white;
-      border-radius: 10px;
-      padding: 20px;
-      max-width: 400px;
-      margin: 50px auto;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
-    }
-    h3 {
-      margin-top: 0;
-    }
-  </style>
+  <title>LiveChat Account Info</title>
 </head>
 <body>
-  <div class="container" id="agent-info">Loading agent information...</div>
+  <button id="getInfo">Get Account Info</button>
+  <pre id="output"></pre>
 
   <script>
-    LiveChat.init().then(async (sdk) => {
-      try {
-        const user = await sdk.getUser();
-        const container = document.getElementById('agent-info');
-        container.innerHTML = `
-          <h3>Agent Information</h3>
-          <p><strong>Name:</strong> ${user.name}</p>
-          <p><strong>Email:</strong> ${user.email}</p>
-          <p><strong>ID:</strong> ${user.id}</p>
-        `;
-        console.log("Agent info:", user);
-      } catch (err) {
-        console.error("Error getting user info:", err);
-        document.getElementById('agent-info').innerText = 'Failed to load agent information.';
-      }
+    document.getElementById('getInfo').addEventListener('click', () => {
+      fetch('https://accounts.livechat.com/v2/info', {
+        headers: {
+          'Authorization': 'Bearer dal:tokenhere'  // Replace with your token here (dangerous!)
+        }
+      })
+      .then(res => {
+        if (!res.ok) throw new Error(`HTTP error ${res.status}`);
+        return res.json();
+      })
+      .then(data => {
+        document.getElementById('output').textContent = JSON.stringify(data, null, 2);
+      })
+      .catch(err => {
+        document.getElementById('output').textContent = 'Error: ' + err.message;
+      });
     });
   </script>
 </body>
