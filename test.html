@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bot Assistant - Login</title>
-    <script src="https://alcdn.msauth.net/browser/2.30.0/js/msal-browser.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -104,17 +103,13 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 10px;
             padding: 12px;
             background-color: white;
             border: 1px solid #ddd;
             border-radius: 8px;
             cursor: pointer;
             transition: background-color 0.3s ease;
-            width: 100%;
-            font-size: 16px;
-            font-weight: 500;
-            color: #444;
+            text-decoration: none;
         }
 
         .microsoft-login:hover {
@@ -122,8 +117,8 @@
         }
 
         .microsoft-login img {
-            width: 20px;
-            height: 20px;
+            width: 24px;
+            height: 24px;
         }
 
         .error-message {
@@ -183,48 +178,15 @@
             <span>OR</span>
         </div>
 
-        <!-- Updated Microsoft login button -->
-        <button class="microsoft-login" onclick="signInWithMicrosoft()">
-            <img src="https://img.icons8.com/color/48/000000/microsoft.png" alt="Microsoft logo" />
-            <span>Microsoft</span>
-        </button>
+        <a class="microsoft-login" href="https://beta-api.botatwork.com/azure/login?app_id=Beta@Work&callback_url=https://beta-ai.botatwork.com/callback">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/4/44/Microsoft_logo.svg" alt="Microsoft Logo">
+        </a>
 
         <div id="errorMessage" class="error-message"></div>
     </div>
 
     <script>
-        const msalConfig = {
-            auth: {
-                clientId: "YOUR_CLIENT_ID",
-                authority: "https://login.microsoftonline.com/YOUR_TENANT_ID",
-                redirectUri: window.location.origin,
-            },
-            cache: {
-                cacheLocation: "sessionStorage",
-                storeAuthStateInCookie: false,
-            }
-        };
-
-        const msalInstance = new msal.PublicClientApplication(msalConfig);
-
-        async function signInWithMicrosoft() {
-            showLoading();
-            try {
-                const loginResponse = await msalInstance.loginPopup({
-                    scopes: ["User.Read"]
-                });
-                if (loginResponse.account) {
-                    window.location.href = 'your-main-app-page.html';
-                }
-            } catch (error) {
-                console.error(error);
-                showError("Microsoft authentication failed. Please try again.");
-            } finally {
-                hideLoading();
-            }
-        }
-
-        async function signInWithCredentials() {
+        function signInWithCredentials() {
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
 
@@ -233,21 +195,12 @@
                 return;
             }
 
+            // Dummy simulation for credentials-based login
             showLoading();
-            try {
-                const response = await msalInstance.loginPopup({
-                    scopes: ["User.Read"],
-                    loginHint: email
-                });
-                if (response.account) {
-                    window.location.href = 'your-main-app-page.html';
-                }
-            } catch (error) {
-                console.error(error);
-                showError("Invalid credentials. Please try again.");
-            } finally {
+            setTimeout(() => {
                 hideLoading();
-            }
+                window.location.href = 'your-main-app-page.html';
+            }, 1500);
         }
 
         function showError(message) {
@@ -263,13 +216,6 @@
         function hideLoading() {
             document.getElementById('loading').style.display = 'none';
         }
-
-        window.onload = async function() {
-            const accounts = msalInstance.getAllAccounts();
-            if (accounts.length > 0) {
-                window.location.href = 'your-main-app-page.html';
-            }
-        };
 
         document.addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
