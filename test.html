@@ -110,6 +110,7 @@
             border-radius: 8px;
             cursor: pointer;
             transition: background-color 0.3s ease;
+            width: 100%;
         }
 
         .microsoft-login:hover {
@@ -119,7 +120,6 @@
         .microsoft-login img {
             width: 24px;
             height: 24px;
-            margin-right: 10px;
         }
 
         .error-message {
@@ -179,10 +179,10 @@
             <span>OR</span>
         </div>
 
+        <!-- ✅ Only this part is changed: -->
         <button class="microsoft-login" onclick="signInWithMicrosoft()">
-            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/96/Microsoft_logo_%282012%29.svg/1200px-Microsoft_logo_%282012%29.svg.png" 
-                 alt="Microsoft Logo">
-            <span></span>
+            <img src="https://upload.wikimedia.org/wikipedia/commons/4/44/Microsoft_logo.svg" 
+                 alt="Microsoft Logo" />
         </button>
 
         <div id="errorMessage" class="error-message"></div>
@@ -211,7 +211,6 @@
                     scopes: ["User.Read"]
                 });
                 if (loginResponse.account) {
-                    // Redirect to main application page
                     window.location.href = 'your-main-app-page.html';
                 }
             } catch (error) {
@@ -238,7 +237,6 @@
                     loginHint: email
                 });
                 if (response.account) {
-                    // Redirect to main application page
                     window.location.href = 'your-main-app-page.html';
                 }
             } catch (error) {
@@ -254,7 +252,8 @@
             errorElement.textContent = message;
             errorElement.style.display = 'block';
         }
-function showLoading() {
+
+        function showLoading() {
             document.getElementById('loading').style.display = 'flex';
         }
 
@@ -262,16 +261,13 @@ function showLoading() {
             document.getElementById('loading').style.display = 'none';
         }
 
-        // Check if user is already signed in when page loads
         window.onload = async function() {
             const accounts = msalInstance.getAllAccounts();
             if (accounts.length > 0) {
-                // User is already signed in, redirect to main app
                 window.location.href = 'your-main-app-page.html';
             }
         };
 
-        // Handle enter key press
         document.addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
                 signInWithCredentials();
